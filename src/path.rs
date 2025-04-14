@@ -1,9 +1,27 @@
+use std::fmt::Display;
 use std::path::PathBuf;
 
 use dirs::config_local_dir;
 
+use crate::config::Plugins;
+
 pub struct PluginDir {
     path: PathBuf,
+}
+
+impl Display for PluginDir {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path.display())
+    }
+}
+
+impl From<Plugins> for PluginDir {
+    fn from(value: Plugins) -> Self {
+        PluginDir::builder()
+            .owner(value.owner())
+            .repo(value.repo())
+            .build()
+    }
 }
 
 impl PluginDir {
@@ -21,6 +39,26 @@ impl PluginDir {
     // This method will help users to discover the builder
     pub fn builder<'a>() -> PluginDirBuilder<'a> {
         PluginDirBuilder::default()
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
+    pub fn as_path(&self) -> &std::path::Path {
+        self.path.as_path()
+    }
+
+    pub fn has_root(&self) -> bool {
+        self.path.has_root()
+    }
+
+    pub fn display(&self) -> std::path::Display<'_> {
+        self.path.display()
+    }
+
+    pub fn is_dir(&self) -> bool {
+        self.path.is_dir()
     }
 }
 

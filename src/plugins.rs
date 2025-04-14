@@ -1,10 +1,12 @@
+use anyhow::Error;
+use dirs::config_local_dir;
+use serde::Deserialize;
+use std::borrow::Cow;
+use std::fmt::Display;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, exit};
 
-use anyhow::Error;
-
 use crate::path::PluginDir;
-
 /// Represents a Plugin that contains details about its owner, repository
 /// and the platform it is hosted on.
 ///
@@ -24,153 +26,148 @@ use crate::path::PluginDir;
 ///     .platform("github.com")
 ///     .build();
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub struct Plugin<'a> {
-    owner: &'a str,
-    repo: &'a str,
-    platform: &'a str,
+    owner: Cow<'a, str>,
+    repo: Cow<'a, str>,
+    platform: Option<Cow<'a, str>>,
+    branch: Option<Cow<'a, str>>,
 }
 
-impl Plugin<'_> {
+impl<'a> Plugin<'a> {
+    pub fn new(
+        owner: Cow<'a, str>,
+        repo: Cow<'a, str>,
+        platform: Option<Cow<'a, str>>,
+        branch: Option<Cow<'a, str>>,
+    ) -> Self {
+        Self {
+            owner,
+            repo,
+            platform,
+            branch,
+        }
+    }
+
     // This method will help users to discover the builder
-    pub fn builder<'a>() -> PluginBuilder<'a> {
+    pub fn builder() -> PluginBuilder<'a> {
         PluginBuilder::default()
     }
-    // This method will help users to discover the builder
-    pub fn install(&self) -> Result<(), Error> {
-        let status = Git::new(self.owner, self.repo, self.platform).clone();
 
-        if status.unwrap().success() {
-            println!("Installed {} successfully!", self.repo);
-        } else {
-            eprintln!("Failed to clone repository.");
-            exit(1); // Exit with a failure status if cloning fails
+    pub fn install(&self) -> Result<(), Error> {
+        let status = Git::new(&self.owner, &self.repo, self.platform.as_deref()).clone();
+
+        match status {
+            Ok(_) => print!(""),
+            Err(err) => println!("already {}", err),
         }
 
         Ok(())
     }
 }
 
-/// Represents a Plugin that contains details about its owner, repository
-/// and the platform it is hosted on.
-///
-/// # Fields
-///
-/// - `owner`: The owner or creator of the repository (e.g., a username or organization).
-/// - `repo`: The name of the repository.
-/// - `platform`: The platform where the repository is hosted (e.g., GitHub, GitLab).
-///
-/// use the builder pattern to create a `Plugin`:
-///
-/// ```rust
-///  use lazy_tmux::plugins::PluginBuilder;
-/// let plugin = PluginBuilder::new()
-///     .owner("abhinandh-s")
-///     .repo("lazy.tmux")
-///     .platform("github.com")
-///     .build();
-/// ```
-pub struct PluginBuilder<'a> {
-    owner: &'a str,
-    repo: &'a str,
-    platform: &'a str,
+impl Display for Plugin<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Plugin:\n  owner: {:?}\n  repo: {:?}\n  platform: {:?}\n  branch: {:?}",
+            self.owner,
+            self.repo,
+            match &self.platform {
+                Some(p) => p,
+                None => &std::borrow::Cow::Borrowed("github.com"),
+            },
+            match &self.branch {
+                Some(p) => p,
+                None => &std::borrow::Cow::Borrowed("none"),
+            }
+        )
+    }
 }
 
-impl Default for PluginBuilder<'_> {
+#[derive(Debug)]
+pub struct PluginBuilder<'a, State = Owner> {
+    owner: Option<Cow<'a, str>>,
+    repo: Option<Cow<'a, str>>,
+    platform: Option<Cow<'a, str>>,
+    branch: Option<Cow<'a, str>>,
+    state: std::marker::PhantomData<State>,
+}
+
+#[derive(Debug)]
+pub struct Owner;
+#[derive(Debug)]
+pub struct Repo;
+#[derive(Debug)]
+pub struct Ready;
+
+impl<'a> PluginBuilder<'a, Owner> {
+    pub fn owner<S: Into<Cow<'a, str>>>(&self, owner: S) -> PluginBuilder<'_, Repo> {
+        PluginBuilder {
+            owner: Some(owner.into()),
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a> PluginBuilder<'a, Repo> {
+    pub fn repo<S: Into<Cow<'a, str>>>(&self, repo: S) -> PluginBuilder<'_, Ready> {
+        PluginBuilder {
+            owner: self.owner.clone(),
+            repo: Some(repo.into()),
+            platform: self.platform.clone(),
+            branch: self.branch.clone(),
+            state: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a> PluginBuilder<'a, Ready> {
+    #[inline]
+    pub fn platform<S: Into<Cow<'a, str>>>(mut self, platform: S) -> Self {
+        self.platform = Some(platform.into());
+        self
+    }
+
+    #[inline]
+    pub fn branch<S: Into<Cow<'a, str>>>(mut self, branch: S) -> Self {
+        self.branch = Some(branch.into());
+        self
+    }
+
+    /// Create a Plugin from the PluginBuilder, applying all settings in PluginBuilder to Plugin.
+    #[inline]
+    pub fn build(self) -> Plugin<'a> {
+        self.into()
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl<'a, S> Into<Plugin<'a>> for PluginBuilder<'a, S>
+where
+    S: std::fmt::Debug,
+{
+    fn into(self) -> Plugin<'a> {
+        assert!(self.owner.is_some());
+        assert!(self.repo.is_some());
+        Plugin {
+            owner: self.owner.unwrap(),
+            repo: self.repo.unwrap(),
+            platform: self.platform,
+            branch: self.branch,
+        }
+    }
+}
+
+impl<S> Default for PluginBuilder<'_, S> {
     fn default() -> Self {
         Self {
             owner: Default::default(),
             repo: Default::default(),
-            platform: "github.com",
+            platform: Some(Cow::Borrowed("github.com")),
+            branch: None,
+            state: std::marker::PhantomData,
         }
     }
 }
 
-impl<'a> PluginBuilder<'a> {
-    pub fn new() -> PluginBuilder<'a> {
-        // Set the minimally required fields of Foo.
-        PluginBuilder::default()
-    }
-
-    pub fn repo(mut self, repo: &'a str) -> PluginBuilder<'a> {
-        // Set the name on the builder itself, and return the builder by value.
-        self.repo = repo;
-        self
-    }
-    pub fn owner(mut self, owner: &'a str) -> PluginBuilder<'a> {
-        // Set the name on the builder itself, and return the builder by value.
-        self.owner = owner;
-        self
-    }
-    pub fn platform(mut self, service: &'a str) -> PluginBuilder<'a> {
-        // Set the name on the builder itself, and return the builder by value.
-        self.platform = service;
-        self
-    }
-
-    // If we can get away with not consuming the Builder here, that is an
-    // advantage. It means we can use the FooBuilder as a template for constructing
-    // many Foos.
-    pub fn build(self) -> Plugin<'a> {
-        // Create a Plugin from the PluginBuilder, applying all settings in PluginBuilder to Plugin.
-        Plugin {
-            owner: self.owner,
-            repo: self.repo,
-            platform: self.platform,
-        }
-    }
-}
-
-pub struct Git<'a> {
-    owner: &'a str,
-    repo: &'a str,
-    platform: &'a str,
-}
-
-#[allow(clippy::should_implement_trait)]
-impl<'a> Git<'a> {
-    pub fn new(owner: &'a str, repo: &'a str, platform: &'a str) -> Self {
-        Self {
-            owner,
-            repo,
-            platform,
-        }
-    }
-
-    pub fn clone(&self) -> Result<ExitStatus, Error> {
-        let dir: PathBuf = PluginDir::builder()
-            .owner(self.owner)
-            .repo(self.repo)
-            .build()
-            .into();
-        // let pluginspath: PathBuf = PluginsPathBakOld::new().join(self.repo).join(self.name).into();
-        // // Run the 'git clone' command
-        let d = Command::new("git")
-            .arg("clone")
-            .arg(format!(
-                "https://{}/{}/{}.git",
-                self.platform, self.owner, self.repo
-            ))
-            .arg(dir)
-            .arg("--depth=1")
-            .arg("--quiet")
-            .status()
-            .unwrap();
-        Ok(d)
-    }
-}
-
-#[test]
-fn builder_test() {
-    let foo: Plugin<'_> = Plugin {
-        owner: "abhinandh-s",
-        repo: "lazy.tmux",
-        platform: "github.com",
-    };
-    let foo_from_builder: Plugin = PluginBuilder::new()
-        .owner("abhinandh-s")
-        .repo("lazy.tmux")
-        .build();
-    assert_eq!(foo_from_builder.platform, "github.com");
-    assert_eq!(foo, foo_from_builder);
-}
