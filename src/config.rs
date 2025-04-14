@@ -1,12 +1,16 @@
 use std::fmt::Display;
 
+use anyhow::Error;
 use dirs::config_local_dir;
 use serde::Deserialize;
 
 pub static DEFAULT_HOST: Cow<'static, str> = Cow::Borrowed("github.com");
+pub static DEFAULT_OWNER: Cow<'static, str> = Cow::Borrowed("abhinandh-s");
+pub static DEFAULT_REPO: Cow<'static, str> = Cow::Borrowed("lazy.tmux");
 
 use std::borrow::Cow;
 
+use crate::git::Git;
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Plugins {
@@ -17,6 +21,23 @@ pub struct Plugins {
 }
 
 impl Plugins {
+    pub fn install(&self) -> Result<(), Error> {
+        let status = Git::new(
+            &self.owner,
+            &self.repo,
+            self.platform.as_deref(),
+            self.branch.as_deref(),
+        )
+        .clone();
+
+        match status {
+            Ok(_) => print!(""),
+            Err(err) => println!("already {}", err),
+        }
+
+        Ok(())
+    }
+
     pub fn owner(&self) -> &str {
         &self.owner
     }
@@ -54,8 +75,6 @@ impl Plugins {
 pub struct ConfigFile {
     plugins: Vec<Plugins>,
 }
-
-
 
 impl Default for Plugins {
     fn default() -> Self {
@@ -103,5 +122,3 @@ impl ConfigFile {
         }
     }
 }
-
-

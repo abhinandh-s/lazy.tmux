@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -37,11 +36,7 @@ impl<'a> Git<'a> {
         if dir.exists() {
             return Err(anyhow::anyhow!("exists"));
         }
-        let branch = if self.branch.is_some() {
-                self.branch
-            } else {
-                Some("")
-            };
+        let branch = self.branch.unwrap_or_default();
         // let pluginspath: PathBuf = PluginsPathBakOld::new().join(self.repo).join(self.name).into();
         // // Run the 'git clone' command
         let d = Command::new("git")
@@ -55,8 +50,7 @@ impl<'a> Git<'a> {
             ))
             .arg(dir)
             .arg("--depth=1")
-            // .arg("--quiet")
-            .arg(branch.into::<OsStr>)
+            .arg("--quiet")
             .status()
             .unwrap();
 
