@@ -36,7 +36,7 @@ impl<'a> Git<'a> {
         if dir.exists() {
             return Err(anyhow::anyhow!("exists"));
         }
-        let branch = self.branch.unwrap_or_default();
+        let _branch = self.branch.unwrap_or_default();
         // let pluginspath: PathBuf = PluginsPathBakOld::new().join(self.repo).join(self.name).into();
         // // Run the 'git clone' command
         let d = Command::new("git")

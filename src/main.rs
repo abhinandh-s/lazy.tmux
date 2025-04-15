@@ -1,35 +1,85 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use clap::Parser;
+use lazy_tmux::args::Cli;
+use lazy_tmux::plugins::ConfigFile;
+
 use anyhow::Error;
-use lazy_tmux::config;
 use lazy_tmux::path::PluginDir;
 
 fn main() {
-    install_plugins().unwrap();
-    source_plugins().unwrap().iter().for_each(|path| {
-        let status = Command::new(path.as_os_str()).status().unwrap();
-        if !status.success() {
-            eprintln!("Warning: Failed to source");
-        } else {
-            eprintln!("Success: sourced");
+    let cli = Cli::parse();
+    match cli.command {
+        Some(lazy_tmux::args::Commands::Install) => {
+            let re = install_plugins();
+            match re {
+                Ok(_) => (),
+                Err(err) => println!("Error: {}", err),
+            }
         }
+        Some(lazy_tmux::args::Commands::Init) => {
+            if install_plugins().is_ok() {
+                source_plugins()
+            }
+        }
+        None => todo!(),
+    }
+}
+
+fn source_plugins() {
+    get_tmux_executable().unwrap().iter().for_each(|path| {
+        let _status = Command::new(path.as_os_str()).status().unwrap();
+        // if !status.success() {
+        //     eprintln!("Warning: Failed to source");
+        // } else {
+        //     eprintln!("Success: sourced");
+        // }
     })
 }
 
+fn is_fully_cloned_repo(mut repo_path: PluginDir) -> bool {
+    let mut git_dir = repo_path.join(".git"); // repo_path.as_ref().join(".git");
+
+    if !git_dir.exists() {
+        return false;
+    }
+
+    // Check if it's a shallow clone
+    if git_dir.join("shallow").exists() {
+        return false;
+    }
+
+    // Run `git fsck` to check integrity
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.to_string())
+        .arg("fsck")
+        .arg("--full")
+        .status();
+
+    match status {
+        Ok(s) => s.success(),
+        Err(_) => false,
+    }
+}
 fn install_plugins() -> Result<(), Error> {
-    let conf = config::ConfigFile::get_plugins().unwrap();
+    let conf = ConfigFile::get_plugins().unwrap();
     for p in conf {
-        p.install()?;
+        let e: PluginDir = p.clone().into();
+        if !e.exists() | is_fully_cloned_repo(p.clone().into()) {
+            p.install()?;
+        }
+        {}
     }
     Ok(())
 }
 
 use walkdir::{DirEntry, WalkDir};
 
-fn source_plugins() -> Result<Vec<PathBuf>, anyhow::Error> {
+fn get_tmux_executable() -> Result<Vec<PathBuf>, anyhow::Error> {
     let mut v = Vec::new();
-    let conf = config::ConfigFile::get_plugins().unwrap();
+    let conf = ConfigFile::get_plugins().unwrap_or_default();
 
     for p in conf {
         let l: PluginDir = p.into();
@@ -38,7 +88,6 @@ fn source_plugins() -> Result<Vec<PathBuf>, anyhow::Error> {
             let e = entry?;
             if is_tmux_file(&e) {
                 v.push(e.path().to_path_buf());
-                println!("{}", e.path().display());
             }
         }
     }
