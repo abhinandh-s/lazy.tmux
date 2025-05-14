@@ -1,12 +1,3 @@
-#![deny(
-    clippy::print_stdout,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    missing_docs,
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc
-)]
-
 use std::fmt::Display;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
@@ -39,7 +30,7 @@ impl PluginDir {
     /// will panic if it can't find config dir
     #[allow(clippy::unwrap_used)]
     pub fn new() -> Self {
-        let plugin_dir = dirs::data_dir().unwrap().join("tmux").join("plugins");
+        let plugin_dir = dirs::config_local_dir().unwrap().join("tmux").join("plugins");
         if !plugin_dir.exists() {
             create_dir_all(&plugin_dir).unwrap();
         }

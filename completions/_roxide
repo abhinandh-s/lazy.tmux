@@ -1,0 +1,170 @@
+#compdef roxide
+
+autoload -U is-at-least
+
+_roxide() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-c+[Sets a custom config file]:FILE:_files' \
+'--config=[Sets a custom config file]:FILE:_files' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_roxide_commands" \
+"*::: :->lazy-tmux" \
+&& ret=0
+    case $state in
+    (lazy-tmux)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:roxide-command-$line[1]:"
+        case $line[1] in
+            (install)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(update)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(clean)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_roxide__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:roxide-help-command-$line[1]:"
+        case $line[1] in
+            (install)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(update)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(clean)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_roxide_commands] )) ||
+_roxide_commands() {
+    local commands; commands=(
+'install:Installs plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'update:Updates plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'clean:Uninstalls plugins not listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'init:Sources plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'roxide commands' commands "$@"
+}
+(( $+functions[_roxide__clean_commands] )) ||
+_roxide__clean_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide clean commands' commands "$@"
+}
+(( $+functions[_roxide__help_commands] )) ||
+_roxide__help_commands() {
+    local commands; commands=(
+'install:Installs plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'update:Updates plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'clean:Uninstalls plugins not listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'init:Sources plugins listed in config file \`\$CONFIG_HOME/tmux/plugins.toml\`' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'roxide help commands' commands "$@"
+}
+(( $+functions[_roxide__help__clean_commands] )) ||
+_roxide__help__clean_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide help clean commands' commands "$@"
+}
+(( $+functions[_roxide__help__help_commands] )) ||
+_roxide__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide help help commands' commands "$@"
+}
+(( $+functions[_roxide__help__init_commands] )) ||
+_roxide__help__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide help init commands' commands "$@"
+}
+(( $+functions[_roxide__help__install_commands] )) ||
+_roxide__help__install_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide help install commands' commands "$@"
+}
+(( $+functions[_roxide__help__update_commands] )) ||
+_roxide__help__update_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide help update commands' commands "$@"
+}
+(( $+functions[_roxide__init_commands] )) ||
+_roxide__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide init commands' commands "$@"
+}
+(( $+functions[_roxide__install_commands] )) ||
+_roxide__install_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide install commands' commands "$@"
+}
+(( $+functions[_roxide__update_commands] )) ||
+_roxide__update_commands() {
+    local commands; commands=()
+    _describe -t commands 'roxide update commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_roxide" ]; then
+    _roxide "$@"
+else
+    compdef _roxide roxide
+fi

@@ -71,14 +71,16 @@ impl<'a> Git<'a> {
             .repo(self.repo)
             .build()
             .into();
+        dbg!("pulling: {}", dir.display());
         let d = Command::new("git")
             .arg("-C")
             .arg(dir)
             .arg("pull")
             .arg("--depth=1")
-            .arg("--quiet")
+            .arg("-q")
+            .arg("-r")
             .status()
-            .unwrap();
+            .map_err(|e| anyhow::anyhow!("Failed to execute git pull: {}", e))?;
         Ok(d)
     }
 }

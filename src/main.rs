@@ -24,9 +24,13 @@ fn main() {
             }
         }
         Some(lazy_tmux::args::Commands::Update) => {
+            println!("update");
         let re = update_plugins();
-            if let Err(err) = re {
-                eprintln!("Failed to update plugins: {}", err);
+            match re {
+                Err(err) => {
+                    eprintln!("Failed to update plugins: {}", err);
+                }
+                Ok(_) => println!("updated"),
             }
         }
         Some(lazy_tmux::args::Commands::Clean) => {
@@ -39,7 +43,11 @@ fn main() {
 fn source_plugins() {
     // we might write it to a log file or something
     get_tmux_executable().unwrap().iter().for_each(|path| {
+        if path.is_file() {
+        dbg!("Trying to run: {}", path.display());
+            
         let _status = Command::new(path.as_os_str()).status().unwrap();
+        }
         // if !status.success() {
         //     eprintln!("Warning: Failed to source");
         // } else {
@@ -89,7 +97,7 @@ fn update_plugins() -> Result<(), Error> {
     let conf = ConfigFile::get_plugins().unwrap();
     for p in conf {
         let e: PluginDir = p.clone().into();
-        if !e.exists() | is_fully_cloned_repo(p.clone().into()) {
+        if e.exists() | is_fully_cloned_repo(p.clone().into()) {
             p.update()?;
         }
         {}
