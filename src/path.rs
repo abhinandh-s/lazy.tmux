@@ -103,6 +103,7 @@ impl Into<PathBuf> for PluginDir {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -114,7 +115,9 @@ mod tests {
             .build();
         assert_eq!(
             <PluginDir as Into<PathBuf>>::into(p),
-            std::path::Path::new("/home/abhi/.config/tmux/plugins/abhinandh-s/lazy.tmux")
+            dirs::config_dir()
+                .unwrap()
+                .join("tmux/plugins/abhinandh-s/lazy.tmux")
         );
     }
 }
