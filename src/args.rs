@@ -9,10 +9,6 @@ pub struct Cli {
     #[arg(short, long, value_name = "FILE")]
     pub config: Option<PathBuf>,
 
-    /// Turn debugging information on
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    pub debug: u8,
-
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -21,6 +17,10 @@ pub struct Cli {
 pub enum Commands {
     /// Installs plugins listed in config file `$CONFIG_HOME/tmux/plugins.toml`
     Install,
+    /// Updates plugins listed in config file `$CONFIG_HOME/tmux/plugins.toml`
+    Update,
+    /// Uninstalls plugins not listed in config file `$CONFIG_HOME/tmux/plugins.toml`
+    Clean,
     /// Sources plugins listed in config file `$CONFIG_HOME/tmux/plugins.toml`
     Init,
 }

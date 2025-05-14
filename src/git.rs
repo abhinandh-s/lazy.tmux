@@ -76,7 +76,7 @@ impl<'a> Git<'a> {
             .arg(dir)
             .arg("pull")
             .arg("--depth=1")
-            // .arg("--quiet")
+            .arg("--quiet")
             .status()
             .unwrap();
         Ok(d)

@@ -1,0 +1,4 @@
+[[plugins]]
+owner = "abhinandh-s"
+repo = "lazy.tmux"
+platform = "github.com"

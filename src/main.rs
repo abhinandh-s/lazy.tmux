@@ -23,11 +23,21 @@ fn main() {
                 source_plugins()
             }
         }
-        None => todo!(),
+        Some(lazy_tmux::args::Commands::Update) => {
+        let re = update_plugins();
+            if let Err(err) = re {
+                eprintln!("Failed to update plugins: {}", err);
+            }
+        }
+        Some(lazy_tmux::args::Commands::Clean) => {
+            unimplemented!()
+        }
+        None => (),
     }
 }
 
 fn source_plugins() {
+    // we might write it to a log file or something
     get_tmux_executable().unwrap().iter().for_each(|path| {
         let _status = Command::new(path.as_os_str()).status().unwrap();
         // if !status.success() {
@@ -39,7 +49,7 @@ fn source_plugins() {
 }
 
 fn is_fully_cloned_repo(mut repo_path: PluginDir) -> bool {
-    let mut git_dir = repo_path.join(".git"); // repo_path.as_ref().join(".git");
+    let mut git_dir = repo_path.join(".git");
 
     if !git_dir.exists() {
         return false;
@@ -74,6 +84,19 @@ fn install_plugins() -> Result<(), Error> {
     }
     Ok(())
 }
+
+fn update_plugins() -> Result<(), Error> {
+    let conf = ConfigFile::get_plugins().unwrap();
+    for p in conf {
+        let e: PluginDir = p.clone().into();
+        if !e.exists() | is_fully_cloned_repo(p.clone().into()) {
+            p.update()?;
+        }
+        {}
+    }
+    Ok(())
+}
+
 
 use walkdir::{DirEntry, WalkDir};
 

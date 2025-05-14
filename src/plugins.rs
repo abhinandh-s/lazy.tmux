@@ -8,6 +8,7 @@
 )]
 
 use std::fmt::Display;
+use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Error;
@@ -47,6 +48,22 @@ impl Plugins {
             self.branch.as_deref(),
         )
         .clone()?;
+        Ok(())
+    }
+    /// update/pull the repo to PluginsDir
+    ///
+    /// # Errors
+    ///
+    /// can fail only on clone
+    #[inline]
+    pub fn update(&self) -> Result<(), Error> {
+        Git::new(
+            &self.owner,
+            &self.repo,
+            self.platform.as_deref(),
+            self.branch.as_deref(),
+        )
+        .pull()?;
         Ok(())
     }
 }
@@ -166,5 +183,14 @@ impl ConfigFile {
                 println!("{}", p);
             });
         }
+    }
+
+    /// for test porpose
+    #[inline]
+    pub fn get_plugins_from(path: &Path) -> Option<Vec<Plugins>> {
+        let config_dir = path.to_path_buf();
+        let input = std::fs::read_to_string(config_dir).ok()?;
+        let config: ConfigFile = toml::from_str(&input).ok()?;
+        Some(config.plugins)
     }
 }

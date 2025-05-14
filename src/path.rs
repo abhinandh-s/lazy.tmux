@@ -11,8 +11,6 @@ use std::fmt::Display;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-use dirs::config_local_dir;
-
 use crate::plugins::Plugins;
 
 /// Represents the dir where plugins are stored
@@ -41,7 +39,7 @@ impl PluginDir {
     /// will panic if it can't find config dir
     #[allow(clippy::unwrap_used)]
     pub fn new() -> Self {
-        let plugin_dir = config_local_dir().unwrap().join("tmux").join("plugins");
+        let plugin_dir = dirs::data_dir().unwrap().join("tmux").join("plugins");
         if !plugin_dir.exists() {
             create_dir_all(&plugin_dir).unwrap();
         }
