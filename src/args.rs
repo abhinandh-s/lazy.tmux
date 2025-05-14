@@ -20,7 +20,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Installs plugins listed in config file `$CONFIG_HOME/tmux/plugins.toml`
-    Install, 
+    Install,
     /// Sources plugins listed in config file `$CONFIG_HOME/tmux/plugins.toml`
-    Init
+    Init,
 }

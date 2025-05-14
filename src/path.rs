@@ -37,7 +37,7 @@ impl From<Plugins> for PluginDir {
 
 impl PluginDir {
     /// .
-    /// # Panics 
+    /// # Panics
     /// will panic if it can't find config dir
     #[allow(clippy::unwrap_used)]
     pub fn new() -> Self {
