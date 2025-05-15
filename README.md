@@ -1,12 +1,13 @@
-# lazy.tmux
-💤 A modern plugin manager for Tmux (WIP)
+💤 A modern plugin manager for Tmux *(Work In Progress)*
 
-[x] source plugins
-[x] install plugins
-[x] update plugins
-[ ] clean plugins
+- ✅ Source plugins  
+- ✅ Install plugins  
+- ✅ Update plugins  
+- ⬜ Clean unused plugins  
 
-Tested and working on Linux.
+> Tested and working on Linux.
+
+---
 
 ## Installation
 
@@ -90,6 +91,7 @@ Licensed under <a href="LICENSE">MIT license</a>.
 <br>
 
 <sub>
+
 Copyright (c) 2025 Abhinandh S
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -109,4 +111,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
 </sub>
