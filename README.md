@@ -79,6 +79,8 @@ Options:
   -V, --version        Print version
 ```
 
+<br>
+
 #### License
 
 <sup>
