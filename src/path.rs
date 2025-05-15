@@ -30,7 +30,10 @@ impl PluginDir {
     /// will panic if it can't find config dir
     #[allow(clippy::unwrap_used)]
     pub fn new() -> Self {
-        let plugin_dir = dirs::config_local_dir().unwrap().join("tmux").join("plugins");
+        let plugin_dir = dirs::config_local_dir()
+            .unwrap()
+            .join("tmux")
+            .join("plugins");
         if !plugin_dir.exists() {
             create_dir_all(&plugin_dir).unwrap();
         }
@@ -53,28 +56,8 @@ impl PluginDir {
         PluginDirBuilder::default()
     }
 
-    /// .
-    #[inline]
-    pub fn path(&self) -> &PathBuf {
-        &self.path
-    }
-
-    /// .
-    #[inline]
     pub fn as_path(&self) -> &std::path::Path {
         self.path.as_path()
-    }
-
-    /// .
-    #[inline]
-    pub fn has_root(&self) -> bool {
-        self.path.has_root()
-    }
-
-    /// .
-    #[inline]
-    pub fn display(&self) -> std::path::Display<'_> {
-        self.path.display()
     }
 }
 
@@ -148,5 +131,65 @@ impl<'a> PluginDirBuilder<'a> {
     pub fn build(self) -> PluginDir {
         // Create a Plugin from the PluginBuilder, applying all settings in PluginBuilder to Plugin.
         PluginDir::new().join(self.owner).join(self.repo)
+    }
+}
+
+/// Provides utility functions to determine standard directory paths used by lazy.tmux,
+/// such as the data directory for installed plugins and the configuration directory.
+///
+/// This module uses the user's XDG base directories (as defined by the `dirs` crate)
+/// to locate or create the necessary folders.
+///
+/// # Errors
+/// Returns `PluginError` variants when required directories cannot be found or created.
+pub mod tmux_dirs {
+    use std::path::PathBuf;
+
+    use crate::error::PluginError;
+ 
+    /// Returns the plugin data directory path.
+    ///
+    /// Resolves to `$XDG_DATA_HOME/tmux/plugins`, typically something like
+    /// `~/.local/share/tmux/plugins`.
+    ///
+    /// # Errors
+    /// Returns [`PluginError::CantFindDataDir`] if the data directory can't be located.
+    pub fn data_dir() -> Result<PathBuf, PluginError> {
+        dirs::data_dir()
+            .map(|dir| dir.join("tmux").join("plugins"))
+            .ok_or(PluginError::CantFindDataDir)
+    }
+
+    /// Returns the tmux configuration directory path and ensures it exists.
+    ///
+    /// Resolves to `$XDG_CONFIG_HOME/tmux`, typically something like
+    /// `~/.config/tmux`. If the directory doesn't exist, it attempts to create it.
+    ///
+    /// # Errors
+    /// - Returns [`PluginError::CantFindConfigDir`] if the config directory can't be found.
+    /// - Returns [`PluginError::CantCreateDir`] if the directory cannot be created.
+    pub fn config_dir() -> Result<PathBuf, PluginError> {
+        dirs::config_local_dir()
+            .map(|dir| -> Result<PathBuf, PluginError> {
+                let path = dir.join("tmux");
+                if !path.exists() {
+                    std::fs::create_dir_all(&path).map_err(PluginError::CantCreateDir)?
+                }
+                Ok(path)
+            })
+            .ok_or(PluginError::CantFindConfigDir)?
+    }
+
+    /// Returns the path to a specific plugin's installation directory.
+    ///
+    /// Given a GitHub `repo` and `owner`, this returns the path where the plugin
+    /// should be installed under the plugins directory.
+    ///
+    /// Example: `data_dir()/repo/owner`
+    ///
+    /// # Errors
+    /// Returns [`PluginError::CantFindDataDir`] if the base plugin directory can't be resolved.
+    pub fn plugin_dir(repo: &str, owner: &str) -> Result<PathBuf, PluginError> {
+        Ok(data_dir()?.join(repo).join(owner))
     }
 }

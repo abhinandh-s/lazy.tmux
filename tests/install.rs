@@ -1,15 +1,12 @@
-use std::path;
-
-use lazy_tmux::plugins::{ConfigFile, Plugins};
+use lazy_tmux::plugins::ConfigFile;
 
 #[test]
 fn test_name() {
-    let conf = ConfigFile::get_plugins();
-    match &conf {
-        Some(config) => panic!("{:?}", config),
-        None => panic!("found none"),
+    let conf = ConfigFile::get_plugins().unwrap();
+   
+    for i in conf {
+        i.install().unwrap();
     }
     
-   // let first = Plugins::new("abhinandh-s".into(), "lazy.tmux".into(), None, None// );
-    // assert_eq!(conf.first().unwrap().to_owned(), first)
+    assert!(dirs::data_dir().unwrap().join("tmux/plugins/abhinadh-s/lazy.tmux").exists())
 }

@@ -18,6 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: mkdir ~/.config/tmux -p
+      - run: cp ./examples/plugins.toml ~/.config/tmux/
       - run: cargo build --verbose
       - run: cargo clippy
       - run: |

@@ -34,7 +34,7 @@ owner = "tmux-plugins"
 repo = "tmux-sensible"
 ```
 
-plugins are installed into ~/.local/share/tmux/plugins
+plugins are installed into ~/.config/tmux/plugins
 
 Put this at the bottom of $XDG_CONFIG_HOME/tmux/tmux.conf
 
