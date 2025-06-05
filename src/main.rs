@@ -19,9 +19,9 @@ use std::process::Command;
 
 use clap::Parser;
 use lazy_tmux::args::Cli;
-use lazy_tmux::plugins::{ConfigFile, Plugins};
-
-use anyhow::Error;
+use lazy_tmux::plugins::ConfigFile;
+use lazy_tmux::{install_plugins, update_plugins};
+use walkdir::{DirEntry, WalkDir};
 use lazy_tmux::path::PluginDir;
 
 fn main() {
@@ -74,62 +74,6 @@ fn source_plugins() {
     })
 }
 
-fn is_fully_cloned_repo(mut repo_path: PluginDir) -> bool {
-    let mut git_dir = repo_path.join(".git");
-
-    if !git_dir.exists() {
-        return false;
-    }
-
-    // Check if it's a shallow clone
-    if git_dir.join("shallow").exists() {
-        return false;
-    }
-
-    // Run `git fsck` to check integrity
-    let status = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.to_string())
-        .arg("fsck")
-        .arg("--full")
-        .status();
-
-    match status {
-        Ok(s) => s.success(),
-        Err(_) => false,
-    }
-}
-
-fn install_plugins() -> Result<(), Error> {
-    if let Some(plugins) = ConfigFile::get_plugins() {
-        dbg!("{}", &plugins);
-        plugins.par_iter().try_for_each(|plugin: &Plugins| -> Result<(), Error> {
-            dbg!("{}", plugin);
-            let dir: PluginDir = plugin.clone().into();
-              if !dir.exists() | is_fully_cloned_repo(plugin.clone().into()) {
-                plugin.install()?;
-            }
-            Ok(())
-
-        })?;
-    }
-    Ok(())
-}
-
-fn update_plugins() -> Result<(), Error> {
-    let conf = ConfigFile::get_plugins().unwrap();
-    for p in conf {
-        let e: PluginDir = p.clone().into();
-        if e.exists() | is_fully_cloned_repo(p.clone().into()) {
-            p.update()?;
-        }
-        {}
-    }
-    Ok(())
-}
-
-use rayon::iter::{IntoParallelRefIterator as _, ParallelIterator as _};
-use walkdir::{DirEntry, WalkDir};
 
 fn get_tmux_executable() -> Result<Vec<PathBuf>, anyhow::Error> {
     let mut v = Vec::new();

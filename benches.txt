@@ -1,0 +1,16 @@
+install_plugins (parallel)
+                        time:   [52.190 µs 52.966 µs 53.779 µs]
+                        change: [−69.841% −68.129% −66.295%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 2 outliers among 100 measurements (2.00%)
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+
+install_plugins_one_by_one (sequential)
+                        time:   [36.800 µs 36.907 µs 37.031 µs]
+                        change: [−63.938% −63.685% −63.391%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  2 (2.00%) high mild
+  5 (5.00%) high severe
+
