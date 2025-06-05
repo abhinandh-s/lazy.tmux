@@ -1,9 +1,25 @@
+/*
+Load config file	✅ Done
+Parse plugin info	✅ Done
+Clone/install plugins	✅ Done
+Update plugins	✅ Done
+CLI command parsing	✅ Done
+Source .tmux plugins	🟡 Partially
+Clean unused plugins	❌ Not done
+Error handling	🟡 Incomplete
+Logging / verbosity control	❌ Not done
+Tests	❌ Missing
+Parallel install/update	❌ Not done
+Lockfile support	❌ Not done
+
+*/
+
 use std::path::PathBuf;
 use std::process::Command;
 
 use clap::Parser;
 use lazy_tmux::args::Cli;
-use lazy_tmux::plugins::ConfigFile;
+use lazy_tmux::plugins::{ConfigFile, Plugins};
 
 use anyhow::Error;
 use lazy_tmux::path::PluginDir;
@@ -14,7 +30,9 @@ fn main() {
         Some(lazy_tmux::args::Commands::Install) => {
             let re = install_plugins();
             match re {
-                Ok(_) => (),
+                Ok(_) => {
+                    dbg!("success");
+                }
                 Err(err) => println!("Error: {}", err),
             }
         }
@@ -25,7 +43,7 @@ fn main() {
         }
         Some(lazy_tmux::args::Commands::Update) => {
             println!("update");
-        let re = update_plugins();
+            let re = update_plugins();
             match re {
                 Err(err) => {
                     eprintln!("Failed to update plugins: {}", err);
@@ -44,9 +62,9 @@ fn source_plugins() {
     // we might write it to a log file or something
     get_tmux_executable().unwrap().iter().for_each(|path| {
         if path.is_file() {
-        dbg!("Trying to run: {}", path.display());
-            
-        let _status = Command::new(path.as_os_str()).status().unwrap();
+            dbg!("Trying to run: {}", path.display());
+
+            let _status = Command::new(path.as_os_str()).status().unwrap();
         }
         // if !status.success() {
         //     eprintln!("Warning: Failed to source");
@@ -81,14 +99,19 @@ fn is_fully_cloned_repo(mut repo_path: PluginDir) -> bool {
         Err(_) => false,
     }
 }
+
 fn install_plugins() -> Result<(), Error> {
-    let conf = ConfigFile::get_plugins().unwrap();
-    for p in conf {
-        let e: PluginDir = p.clone().into();
-        if !e.exists() | is_fully_cloned_repo(p.clone().into()) {
-            p.install()?;
-        }
-        {}
+    if let Some(plugins) = ConfigFile::get_plugins() {
+        dbg!("{}", &plugins);
+        plugins.par_iter().try_for_each(|plugin: &Plugins| -> Result<(), Error> {
+            dbg!("{}", plugin);
+            let dir: PluginDir = plugin.clone().into();
+              if !dir.exists() | is_fully_cloned_repo(plugin.clone().into()) {
+                plugin.install()?;
+            }
+            Ok(())
+
+        })?;
     }
     Ok(())
 }
@@ -105,7 +128,7 @@ fn update_plugins() -> Result<(), Error> {
     Ok(())
 }
 
-
+use rayon::iter::{IntoParallelRefIterator as _, ParallelIterator as _};
 use walkdir::{DirEntry, WalkDir};
 
 fn get_tmux_executable() -> Result<Vec<PathBuf>, anyhow::Error> {

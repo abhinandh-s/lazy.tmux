@@ -170,6 +170,7 @@ impl ConfigFile {
     pub fn get_plugins() -> Option<Vec<Plugins>> {
         let config_dir = config_local_dir()?.join("tmux").join("plugins.toml");
         let input = std::fs::read_to_string(config_dir).ok()?;
+        dbg!("{}", &input);
         let config: ConfigFile = toml::from_str(&input).ok()?;
         Some(config.plugins)
     }
